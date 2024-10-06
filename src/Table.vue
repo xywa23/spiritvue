@@ -65,7 +65,6 @@ const gameResults = [
     difficulty: 6,
     score: 42,
   },
-  // Add more game results as needed
 ]
 </script>
 
@@ -90,21 +89,25 @@ const gameResults = [
       </TableHeader>
       <TableBody>
         <TableRow v-for="result in gameResults" :key="result.user + result.date">
-          <TableCell>{{ result.user }}</TableCell>
-          <TableCell>{{ result.date }}</TableCell>
-          <TableCell>{{ result.spirits }}</TableCell>
-          <TableCell>{{ result.terrorLevel }}</TableCell>
-          <TableCell>{{ result.islandState }}</TableCell>
+          <TableCell class="py-4">{{ result.user }}</TableCell>
+          <TableCell class="py-4">{{ result.date }}</TableCell>
+          <TableCell class="py-4">{{ result.spirits }}</TableCell>
+          <TableCell class="py-4">{{ result.terrorLevel }}</TableCell>
           <TableCell>
-            <Badge>
+            <Badge variant="outline">
+              {{ result.islandState }}
+            </Badge>
+          </TableCell>
+          <TableCell>
+            <Badge variant="outline">
               {{ result.result }}
             </Badge>
           </TableCell>
-          <TableCell>{{ result.fun }}/10</TableCell>
-          <TableCell>{{ result.adversary }}</TableCell>
-          <TableCell>{{ result.scenario }}</TableCell>
-          <TableCell>{{ result.difficulty }}/10</TableCell>
-          <TableCell>{{ result.score }}</TableCell>
+          <TableCell class="py-4">{{ result.fun }}/10</TableCell>
+          <TableCell class="py-4">{{ result.adversary }}</TableCell>
+          <TableCell class="py-4">{{ result.scenario }}</TableCell>
+          <TableCell class="py-4">{{ result.difficulty }}/10</TableCell>
+          <TableCell class="py-4">{{ result.score }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>

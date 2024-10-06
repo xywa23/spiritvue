@@ -67,13 +67,38 @@ const handleSubmit = () => {
 
 <template>
   <header class="flex justify-between items-center p-4">
-    <h1 class="text-xl font-bold">spirit island stats</h1>
-    <div class="flex items-center space-x-2">
+    <h1
+        class="text-xl font-bold cursor-pointer hover:text-primary transition-colors duration-200"
+        @click="handleViewCharts"
+    >
+      spirit island stats
+    </h1>
+    <div class="flex items-center space-x-4">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost">
+            <Icon icon="radix-icons:moon" class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Icon icon="radix-icons:sun" class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span class="sr-only">Toggle theme</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem @click="mode = 'light'">Light</DropdownMenuItem>
+          <DropdownMenuItem @click="mode = 'dark'">Dark</DropdownMenuItem>
+          <DropdownMenuItem @click="mode = 'auto'">System</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button variant="ghost" @click="handleViewUser">
+        <Icon icon="radix-icons:gear" class="h-[1.2rem] w-[1.2rem]" />
+      </Button>
+      <Button variant="ghost" @click="handleViewUser">
+        <Icon icon="radix-icons:person" class="h-[1.2rem] w-[1.2rem]" />
+      </Button>
       <Dialog :open="isModalOpen" @update:open="isModalOpen = $event">
         <DialogTrigger asChild>
-          <Button variant="outline" @click="openModal">
-            <Icon icon="mdi:plus" class="mr-2 h-4 w-4" />
-            Add Game
+          <Button variant="default" @click="openModal">
+            <Icon icon="radix-icons:plus" class="mr-2 h-4 w-4" />
+            New Game
           </Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-[600px]">
@@ -161,28 +186,6 @@ const handleSubmit = () => {
           </form>
         </DialogContent>
       </Dialog>
-      <Button variant="outline" @click="handleViewCharts">
-        <Icon icon="mdi:chart-bar" class="mr-2 h-4 w-4" />
-        Charts
-      </Button>
-      <Button variant="outline" @click="handleViewUser">
-        <Icon icon="mdi:user" class="mr-2 h-4 w-4" />
-        User
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            <Icon icon="radix-icons:moon" class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Icon icon="radix-icons:sun" class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span class="sr-only">Toggle theme</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem @click="mode = 'light'">Light</DropdownMenuItem>
-          <DropdownMenuItem @click="mode = 'dark'">Dark</DropdownMenuItem>
-          <DropdownMenuItem @click="mode = 'auto'">System</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   </header>
 </template>
