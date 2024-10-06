@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-// Orders data
+
 const orders = [
   {
     orderId: 'ORD001',
@@ -70,7 +70,16 @@ const orders = [
       <TableBody>
         <TableRow v-for="order in orders" :key="order.orderId">
           <TableCell class="font-medium">{{ order.orderId }}</TableCell>
-          <TableCell>{{ order.status }}</TableCell>
+          <TableCell>
+            <span
+                :class="[
+                'px-2 py-1 text-xs rounded',
+                'bg-gray-100 text-gray-900'
+              ]"
+            >
+              {{ order.status }}
+            </span>
+          </TableCell>
           <TableCell>{{ order.shippingMethod }}</TableCell>
           <TableCell class="text-right">{{ order.totalAmount }}</TableCell>
         </TableRow>
