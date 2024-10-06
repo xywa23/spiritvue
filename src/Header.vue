@@ -8,7 +8,7 @@ const mode = useColorMode()
 </script>
 
 <template>
-  <header class="flex justify-between items-center p-4 bg-white-100 dark:bg-black-900">
+  <header class="flex justify-between items-center p-4">
     <h1 class="text-xl font-bold">spirit island stats</h1>
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
