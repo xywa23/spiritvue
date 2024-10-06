@@ -58,6 +58,10 @@ const handleViewUser = () => {
 const handleViewCharts = () => {
   router.push('/table')
 }
+
+const handleLogOut = () => {
+  router.push('/user-profile')
+}
 const handleSubmit = () => {
   // Implement your submit logic here
   console.log('Form submitted:', formState.value)
@@ -88,12 +92,21 @@ const handleSubmit = () => {
           <DropdownMenuItem @click="mode = 'auto'">System</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="ghost" @click="handleViewUser">
-        <Icon icon="radix-icons:gear" class="h-[1.2rem] w-[1.2rem]" />
-      </Button>
-      <Button variant="ghost" @click="handleViewUser">
-        <Icon icon="radix-icons:person" class="h-[1.2rem] w-[1.2rem]" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost">
+            <Icon icon="radix-icons:person" class="h-[1.2rem] w-[1.2rem]" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem @click="handleViewUser">
+            View User
+          </DropdownMenuItem>
+          <DropdownMenuItem @click="handleLogOut">
+            Log Out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Dialog :open="isModalOpen" @update:open="isModalOpen = $event">
         <DialogTrigger asChild>
           <Button variant="default" @click="openModal">
