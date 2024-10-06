@@ -9,79 +9,91 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-const orders = [
+// Updated game results data
+const gameResults = [
   {
-    orderId: 'ORD001',
-    status: 'Shipped',
-    totalAmount: '$320.00',
-    shippingMethod: 'Express',
+    user: 'Player1',
+    date: '2024-10-05',
+    spirits: 'Thunderspeaker, Vital Strength of the Earth',
+    terrorLevel: 2,
+    islandState: 'Healthy',
+    result: 'Victory',
+    fun: 9,
+    adversary: 'Brandenburg-Prussia',
+    scenario: 'Blitz',
+    difficulty: 7,
+    score: 65,
   },
   {
-    orderId: 'ORD002',
-    status: 'Processing',
-    totalAmount: '$180.00',
-    shippingMethod: 'Standard',
+    user: 'Player2',
+    date: '2024-10-04',
+    spirits: 'Ocean\'s Hungry Grasp',
+    terrorLevel: 3,
+    islandState: 'Ravaged',
+    result: 'Defeat',
+    fun: 7,
+    adversary: 'England',
+    scenario: 'Guard the Isle\'s Heart',
+    difficulty: 6,
+    score: 42,
   },
-  {
-    orderId: 'ORD003',
-    status: 'Cancelled',
-    totalAmount: '$420.00',
-    shippingMethod: 'Express',
-  },
-  {
-    orderId: 'ORD004',
-    status: 'Delivered',
-    totalAmount: '$550.00',
-    shippingMethod: 'Next Day',
-  },
-  {
-    orderId: 'ORD005',
-    status: 'Shipped',
-    totalAmount: '$270.00',
-    shippingMethod: 'Standard',
-  },
-  {
-    orderId: 'ORD006',
-    status: 'Processing',
-    totalAmount: '$190.00',
-    shippingMethod: 'Express',
-  },
-  {
-    orderId: 'ORD007',
-    status: 'Delivered',
-    totalAmount: '$380.00',
-    shippingMethod: 'Standard',
-  },
+  // Add more game results as needed
 ]
+
+// Function to determine color based on result
+const getResultColor = (result: string) => {
+  switch (result.toLowerCase()) {
+    case 'victory':
+      return 'bg-green-100 text-green-800'
+    case 'defeat':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
 </script>
 
 <template>
   <div>
     <Table>
-      <TableCaption>A list of your recent orders.</TableCaption>
+      <TableCaption>Spirit Island Game Results</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead class="w-[100px]">Order ID</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Shipping</TableHead>
-          <TableHead class="text-right">Amount</TableHead>
+          <TableHead>User</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>Spirits</TableHead>
+          <TableHead>Terror Level</TableHead>
+          <TableHead>Island State</TableHead>
+          <TableHead>Result</TableHead>
+          <TableHead>Fun</TableHead>
+          <TableHead>Adversary</TableHead>
+          <TableHead>Scenario</TableHead>
+          <TableHead>Difficulty</TableHead>
+          <TableHead>Score</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow v-for="order in orders" :key="order.orderId">
-          <TableCell class="font-medium">{{ order.orderId }}</TableCell>
+        <TableRow v-for="result in gameResults" :key="result.user + result.date">
+          <TableCell>{{ result.user }}</TableCell>
+          <TableCell>{{ result.date }}</TableCell>
+          <TableCell>{{ result.spirits }}</TableCell>
+          <TableCell>{{ result.terrorLevel }}</TableCell>
+          <TableCell>{{ result.islandState }}</TableCell>
           <TableCell>
             <span
                 :class="[
-                'px-2 py-1 text-xs rounded',
-                'bg-gray-100 text-gray-900'
+                'px-2 py-1 text-xs font-semibold rounded-full',
+                getResultColor(result.result)
               ]"
             >
-              {{ order.status }}
+              {{ result.result }}
             </span>
           </TableCell>
-          <TableCell>{{ order.shippingMethod }}</TableCell>
-          <TableCell class="text-right">{{ order.totalAmount }}</TableCell>
+          <TableCell>{{ result.fun }}/10</TableCell>
+          <TableCell>{{ result.adversary }}</TableCell>
+          <TableCell>{{ result.scenario }}</TableCell>
+          <TableCell>{{ result.difficulty }}/10</TableCell>
+          <TableCell>{{ result.score }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
