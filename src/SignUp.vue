@@ -4,40 +4,49 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {supabase} from "@/lib/supabase.ts";
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const isLoading = ref(false)
+const errorMessage = ref('')
 
 const handleSignUp = async () => {
   if (!name.value || !email.value || !password.value || !confirmPassword.value) {
-    alert('Please fill in all fields')
+    errorMessage.value = 'Please fill in all fields'
     return
   }
 
   if (password.value !== confirmPassword.value) {
-    alert('Passwords do not match')
+    errorMessage.value = 'Passwords do not match'
     return
   }
 
   isLoading.value = true
+  errorMessage.value = ''
 
   try {
-    // Here you would typically call your registration service
-    // For example: await authService.register(name.value, email.value, password.value)
-    console.log('Signing up with:', { name: name.value, email: email.value, password: password.value })
+    const { data, error } = await supabase.auth.signUp({
+      email: email.value,
+      password: password.value,
+      options: {
+        data: {
+          full_name: name.value,
+        }
+      }
+    })
 
-    // Simulate an API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    if (error) throw error
 
-    // Handle successful registration (e.g., redirect to login or dashboard)
-    console.log('Registration successful')
+    console.log('Registration successful', data)
+    router.push('/login')
   } catch (error) {
-    // Handle registration error
     console.error('Registration failed:', error)
-    alert('Registration failed. Please try again.')
+    errorMessage.value = error instanceof Error ? error.message : 'Registration failed. Please try again.'
   } finally {
     isLoading.value = false
   }
@@ -71,6 +80,7 @@ const handleSignUp = async () => {
               <Input id="confirmPassword" v-model="confirmPassword" type="password" placeholder="Confirm your password" />
             </div>
           </div>
+          <p v-if="errorMessage" class="text-red-500 mt-2">{{ errorMessage }}</p>
           <Button class="w-full mt-6" type="submit" :disabled="isLoading">
             {{ isLoading ? 'Signing up...' : 'Sign Up' }}
           </Button>

@@ -33,7 +33,7 @@ const gameResults = [
     spirits: 'Ocean\'s Hungry Grasp',
     terrorLevel: 3,
     islandState: 'Ravaged',
-    result: 'Defeat',
+    result: 'Victory',
     fun: 7,
     adversary: 'England',
     scenario: 'Guard the Isle\'s Heart',

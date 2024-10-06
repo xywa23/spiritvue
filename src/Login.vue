@@ -4,33 +4,43 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {supabase} from "@/lib/supabase.ts";
+import { useRouter } from 'vue-router'
+import { AuthError } from '@supabase/supabase-js'
 
+const router = useRouter()
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
+const errorMessage = ref('')
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
-    alert('Please enter both email and password')
+    errorMessage.value = 'Please enter both email and password'
     return
   }
 
   isLoading.value = true
+  errorMessage.value = ''
 
   try {
-    // Here you would typically call your authentication service
-    // For example: await authService.login(email.value, password.value)
-    console.log('Logging in with:', { email: email.value, password: password.value })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    })
 
-    // Simulate an API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    if (error) throw error
 
-    // Handle successful login (e.g., redirect to dashboard)
-    console.log('Login successful')
+    console.log('Login successful', data)
+    // Redirect to dashboard or home page after successful login
+    router.push('/table')
   } catch (error) {
-    // Handle login error
     console.error('Login failed:', error)
-    alert('Login failed. Please try again.')
+    if (error instanceof AuthError) {
+      errorMessage.value = error.message
+    } else {
+      errorMessage.value = 'An unexpected error occurred. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -56,6 +66,7 @@ const handleLogin = async () => {
               <Input id="password" v-model="password" type="password" placeholder="Your password" />
             </div>
           </div>
+          <p v-if="errorMessage" class="text-red-500 mt-2">{{ errorMessage }}</p>
           <Button class="w-full mt-6" type="submit" :disabled="isLoading">
             {{ isLoading ? 'Logging in...' : 'Login' }}
           </Button>

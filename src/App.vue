@@ -13,9 +13,6 @@ import Header from "@/Header.vue";
 </template>
 
 <style scoped>
-.app {
-  /* Add any app-wide styles here */
-}
 
 main {
   padding: 1rem;
