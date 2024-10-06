@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Icon } from '@iconify/vue'
 
 
 // Updated game results data
@@ -94,12 +95,20 @@ const gameResults = [
           <TableCell class="py-4">{{ result.spirits }}</TableCell>
           <TableCell class="py-4">{{ result.terrorLevel }}</TableCell>
           <TableCell>
-            <Badge variant="outline">
+            <Badge :variant="result.islandState === 'Healthy' ? 'default' : 'destructive'" class="gap-1">
+              <Icon
+                  :icon="result.islandState === 'Healthy' ? 'radix-icons:check' : 'radix-icons:cross-2'"
+                  class="w-3 h-3"
+              />
               {{ result.islandState }}
             </Badge>
           </TableCell>
           <TableCell>
-            <Badge variant="outline">
+            <Badge :variant="result.result === 'Victory' ? 'default' : 'destructive'" class="gap-1">
+              <Icon
+                  :icon="result.result === 'Victory' ? 'radix-icons:check' : 'radix-icons:cross-2'"
+                  class="w-3 h-3"
+              />
               {{ result.result }}
             </Badge>
           </TableCell>
