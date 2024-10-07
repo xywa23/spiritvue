@@ -9,10 +9,17 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import {supabase} from "@/lib/supabase.ts";
+import {Session} from "@supabase/supabase-js";
+
+const props = defineProps<{
+  session?: Session | null
+}>()
 
 const router = useRouter()
 const mode = useColorMode()
 const isModalOpen = ref(false)
+const errorMessage = ref('')
 
 const openModal = () => {
   isModalOpen.value = true
@@ -23,12 +30,12 @@ const closeModal = () => {
 }
 
 // Form state
-const formState = ref({
+const newGame = ref({
+  date: new Date().toISOString().split('T')[0],
   numPlayers: 1,
   spirits: [],
-  aspects: [],
   adversary: '',
-  adversaryDiff: 0,
+  adversaryDifficulty: 0,
   scenario: '',
   board: [],
   result: '',
@@ -36,14 +43,16 @@ const formState = ref({
   islandState: '',
   fun: 1,
   blightOnIsland: 1,
-  cardsRemainingInDeck: 1,
+  cardsNotInDeck: 0,
+  cardsRemainingInDeck: 0,
+  difficulty: 0,
   remainingDahan: 1,
+  score: 0
 })
 
 // Computed properties for difficulty and score
 const calculatedDifficulty = computed(() => {
-  // Implement your difficulty calculation logic here
-  return 0 // Placeholder
+  return newGame.value.adversaryDifficulty // Placeholder
 })
 
 const calculatedScore = computed(() => {
@@ -59,13 +68,46 @@ const handleViewCharts = () => {
   router.push('/table')
 }
 
-const handleLogOut = () => {
-  router.push('/user-profile')
+const handleLogOut = async () => {
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+    router.push('/login')
+  } catch (error: unknown) {
+    console.error('Error signing out:', error)
+    if (error instanceof Error) {
+      errorMessage.value = error.message
+    } else {
+      errorMessage.value = 'Failed to sign out. Please try again.'
+    }
+  }
 }
-const handleSubmit = () => {
-  // Implement your submit logic here
-  console.log('Form submitted:', formState.value)
-  closeModal()
+const handleSubmit = async () => {
+  try {
+    if (!props.session) {
+      errorMessage.value = 'You must be logged in to create a game.'
+      return
+    }
+
+    const { data, error } = await supabase
+        .from('games')
+        .insert([{ ...newGame.value, userId: props.session.user.id }])
+        .select()
+
+    if (error) throw error
+    console.log('Game created:', data)
+    closeModal()
+    // Optionally, you can reset the form or fetch updated game list here
+  } catch (error: unknown) {
+    console.error('Error creating game:', error)
+    if (error instanceof Error) {
+      errorMessage.value = error.message
+    } else if (typeof error === 'object' && error !== null && 'message' in error) {
+      errorMessage.value = (error as { message: string }).message
+    } else {
+      errorMessage.value = 'An unknown error occurred. Please try again.'
+    }
+  }
 }
 </script>
 
@@ -77,7 +119,7 @@ const handleSubmit = () => {
     >
       spirit island stats
     </h1>
-    <div class="flex items-center space-x-4">
+    <div v-if="session" class="flex items-center space-x-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost">
@@ -122,14 +164,19 @@ const handleSubmit = () => {
             </DialogDescription>
           </DialogHeader>
           <form @submit.prevent="handleSubmit" class="space-y-8">
+            <div v-if="errorMessage" class="text-red-500 mb-4">{{ errorMessage }}</div>
             <div class="grid grid-cols-2 gap-4">
               <div>
+                <Label for="date">Date</Label>
+                <Input id="date" v-model="newGame.date" type="date" />
+              </div>
+              <div>
                 <Label for="numPlayers">Number of Players</Label>
-                <Input id="numPlayers" v-model="formState.numPlayers" type="number" min="1" max="6" />
+                <Input id="numPlayers" v-model="newGame.numPlayers" type="number" min="1" max="6" />
               </div>
               <div>
                 <Label for="islandState">Island State</Label>
-                <Select v-model="formState.islandState">
+                <Select v-model="newGame.islandState">
                   <SelectTrigger>
                     <SelectValue placeholder="Select island state" />
                   </SelectTrigger>
@@ -141,7 +188,7 @@ const handleSubmit = () => {
               </div>
               <div>
                 <Label for="adversary">Adversary</Label>
-                <Select v-model="formState.adversary">
+                <Select v-model="newGame.adversary">
                   <SelectTrigger>
                     <SelectValue placeholder="Select adversary" />
                   </SelectTrigger>
@@ -153,12 +200,12 @@ const handleSubmit = () => {
                 </Select>
               </div>
               <div>
-                <Label for="adversaryDiff">Adversary Difficulty</Label>
-                <Input id="adversaryDiff" v-model="formState.adversaryDiff" type="number" min="0" max="6" />
+                <Label for="adversaryDifficulty">Adversary Difficulty</Label>
+                <Input id="adversaryDifficulty" v-model="newGame.adversaryDifficulty" type="number" min="0" max="6" />
               </div>
               <div>
                 <Label for="scenario">Scenario</Label>
-                <Select v-model="formState.scenario">
+                <Select v-model="newGame.scenario">
                   <SelectTrigger>
                     <SelectValue placeholder="Select scenario" />
                   </SelectTrigger>
@@ -171,7 +218,7 @@ const handleSubmit = () => {
               </div>
               <div>
                 <Label for="result">Result</Label>
-                <Select v-model="formState.result">
+                <Select v-model="newGame.result">
                   <SelectTrigger>
                     <SelectValue placeholder="Select result" />
                   </SelectTrigger>
@@ -181,7 +228,6 @@ const handleSubmit = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <!-- Modified part starts here -->
               <div>
                 <Label>Calculated Difficulty</Label>
                 <Input :value="calculatedDifficulty" readonly />
@@ -190,7 +236,6 @@ const handleSubmit = () => {
                 <Label>Score</Label>
                 <Input :value="calculatedScore" readonly />
               </div>
-              <!-- Modified part ends here -->
             </div>
             <div class="flex justify-end space-x-2">
               <Button @click="closeModal" variant="outline">Cancel</Button>
@@ -199,6 +244,10 @@ const handleSubmit = () => {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+    <div v-else>
+      <!-- Add a login button or link here -->
+      <Button @click="router.push('/login')">Log In</Button>
     </div>
   </header>
 </template>
