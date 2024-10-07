@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { supabase } from "@/lib/supabase"
 import {
   Table,
   TableBody,
@@ -11,71 +13,64 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Icon } from '@iconify/vue'
 
+// Define the Game type based on your table structure
+type Game = {
+  id: string;
+  date: string;
+  userId: string;
+  spirits: string;
+  terrorLevel: number;
+  islandState: string;
+  result: string;
+  fun: number;
+  adversary: string;
+  scenario: string;
+  difficulty: number;
+  score: number;
+}
 
-// Updated game results data
-const gameResults = [
-  {
-    user: 'Player1',
-    date: '2024-10-05',
-    spirits: 'Thunderspeaker, Vital Strength of the Earth',
-    terrorLevel: 2,
-    islandState: 'Healthy',
-    result: 'Victory',
-    fun: 9,
-    adversary: 'Brandenburg-Prussia',
-    scenario: 'Blitz',
-    difficulty: 7,
-    score: 65,
-  },
-  {
-    user: 'Player2',
-    date: '2024-10-04',
-    spirits: 'Ocean\'s Hungry Grasp',
-    terrorLevel: 3,
-    islandState: 'Ravaged',
-    result: 'Victory',
-    fun: 7,
-    adversary: 'England',
-    scenario: 'Guard the Isle\'s Heart',
-    difficulty: 6,
-    score: 42,
-  },
-  {
-    user: 'Player1',
-    date: '2024-10-05',
-    spirits: 'Thunderspeaker, Vital Strength of the Earth',
-    terrorLevel: 2,
-    islandState: 'Healthy',
-    result: 'Victory',
-    fun: 9,
-    adversary: 'Brandenburg-Prussia',
-    scenario: 'Blitz',
-    difficulty: 7,
-    score: 65,
-  },
-  {
-    user: 'Player2',
-    date: '2024-10-04',
-    spirits: 'Ocean\'s Hungry Grasp',
-    terrorLevel: 3,
-    islandState: 'Ravaged',
-    result: 'Defeat',
-    fun: 7,
-    adversary: 'England',
-    scenario: 'Guard the Isle\'s Heart',
-    difficulty: 6,
-    score: 42,
-  },
-]
+const games = ref<Game[]>([])
+const errorMessage = ref('')
+const isLoading = ref(false)
+
+// Read all games for the current user
+const readGames = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('No user logged in')
+
+    const { data, error } = await supabase
+        .from('games')
+        .select('*')
+        .eq('userId', user.id)
+        .order('date', { ascending: false })
+
+    if (error) throw error
+    games.value = data as Game[]
+    console.log('Games fetched:', data)
+  } catch (error) {
+    console.error('Error fetching games:', error)
+    errorMessage.value = error instanceof Error ? error.message : 'Error fetching games'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  readGames()
+})
 </script>
 
 <template>
   <div>
-    <Table>
+    <div v-if="errorMessage" class="text-red-500 mb-4">{{ errorMessage }}</div>
+    <div v-if="isLoading">Loading...</div>
+    <Table v-else>
       <TableCaption>Spirit Island Game Results</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead>User</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Spirits</TableHead>
           <TableHead>Terror Level</TableHead>
@@ -89,34 +84,33 @@ const gameResults = [
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow v-for="result in gameResults" :key="result.user + result.date">
-          <TableCell class="py-4">{{ result.user }}</TableCell>
-          <TableCell class="py-4">{{ result.date }}</TableCell>
-          <TableCell class="py-4">{{ result.spirits }}</TableCell>
-          <TableCell class="py-4">{{ result.terrorLevel }}</TableCell>
+        <TableRow v-for="game in games" :key="game.id">
+          <TableCell class="py-4">{{ game.date }}</TableCell>
+          <TableCell class="py-4">{{ game.spirits }}</TableCell>
+          <TableCell class="py-4">{{ game.terrorLevel }}</TableCell>
           <TableCell>
-            <Badge :variant="result.islandState === 'Healthy' ? 'default' : 'destructive'" class="gap-1">
+            <Badge :variant="game.islandState === 'Healthy' ? 'default' : 'destructive'" class="gap-1">
               <Icon
-                  :icon="result.islandState === 'Healthy' ? 'radix-icons:check' : 'radix-icons:cross-2'"
+                  :icon="game.islandState === 'Healthy' ? 'radix-icons:check' : 'radix-icons:cross-2'"
                   class="w-3 h-3"
               />
-              {{ result.islandState }}
+              {{ game.islandState }}
             </Badge>
           </TableCell>
           <TableCell>
-            <Badge :variant="result.result === 'Victory' ? 'default' : 'destructive'" class="gap-1">
+            <Badge :variant="game.result === 'Victory' ? 'default' : 'destructive'" class="gap-1">
               <Icon
-                  :icon="result.result === 'Victory' ? 'radix-icons:check' : 'radix-icons:cross-2'"
+                  :icon="game.result === 'Victory' ? 'radix-icons:check' : 'radix-icons:cross-2'"
                   class="w-3 h-3"
               />
-              {{ result.result }}
+              {{ game.result }}
             </Badge>
           </TableCell>
-          <TableCell class="py-4">{{ result.fun }}/10</TableCell>
-          <TableCell class="py-4">{{ result.adversary }}</TableCell>
-          <TableCell class="py-4">{{ result.scenario }}</TableCell>
-          <TableCell class="py-4">{{ result.difficulty }}/10</TableCell>
-          <TableCell class="py-4">{{ result.score }}</TableCell>
+          <TableCell class="py-4">{{ game.fun }}/10</TableCell>
+          <TableCell class="py-4">{{ game.adversary }}</TableCell>
+          <TableCell class="py-4">{{ game.scenario }}</TableCell>
+          <TableCell class="py-4">{{ game.difficulty }}/10</TableCell>
+          <TableCell class="py-4">{{ game.score }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
