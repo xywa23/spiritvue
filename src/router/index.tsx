@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Table from '@/Table.vue'  // Import the Table component
-import UserProfile from "@/UserProfile.vue";
-import Login from "@/Login.vue";
-import SignUp from "@/SignUp.vue";
+import Table from '@/components/Table.vue'  // Import the Table component
+import UserProfile from "@/components/UserProfile.vue";
+import Login from "@/components/Login.vue";
+import SignUp from "@/components/SignUp.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
