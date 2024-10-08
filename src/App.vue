@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import Header from "@/components/header.vue"
+import Sidebar from "@/components/Sidebar.vue"
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
@@ -28,14 +29,18 @@ watch(session, (newSession) => {
 <template>
   <div class="app">
     <Header :session="session" />
-    <main>
-      <RouterView :session="session" />
-    </main>
+    <div>
+      <main>
+        <RouterView :session="session" />
+      </main>
+      <Sidebar />
+    </div>
   </div>
 </template>
 
 <style scoped>
 main {
+  flex-grow: 1;
   padding: 1rem;
 }
 </style>

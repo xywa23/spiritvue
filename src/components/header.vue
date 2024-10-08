@@ -65,7 +65,7 @@ const handleViewUser = () => {
 }
 
 const handleViewCharts = () => {
-  router.push('/table')
+  router.push('/leaderboards')
 }
 
 const handleLogOut = async () => {

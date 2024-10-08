@@ -1,14 +1,15 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Table from '@/components/table.vue'  // Import the Table component
-import UserProfile from "@/components/userProfile.vue";
+import UserProfile from "@/components/user/main.vue";
 import Login from "@/components/login.vue";
 import SignUp from "@/components/signUp.vue";
+import Leaderboards from "@/components/leaderboards/main.vue";
+
 
 const routes: Array<RouteRecordRaw> = [
     {
-        path: '/table',  // Add new route for Table component
-        name: 'Table',
-        component: Table
+        path: '/leaderboards',  // Add new route for Table component
+        name: 'Leaderboards',
+        component: Leaderboards
     },
     {
         path: '/user-profile',  // Add new route for Table component
