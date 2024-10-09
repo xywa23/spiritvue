@@ -28,7 +28,7 @@ const users = ref<User[]>([
 <template>
   <Card class="w-full">
     <CardHeader>
-      <CardTitle>Top Users</CardTitle>
+      <CardTitle>Top Users This Week</CardTitle>
     </CardHeader>
     <CardContent>
       <Table>

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Icon } from '@iconify/vue'
 import { supabase } from "@/lib/supabase.ts"
@@ -22,43 +21,66 @@ type Game = {
   score: number;
 }
 
-const columns = ['date', 'spirits', 'terrorLevel', 'islandState', 'result', 'fun', 'adversary', 'scenario', 'difficulty', 'score'] as const;
+const columns = ['rank', 'userId', 'spirits', 'adversary', 'result', 'score'] as const;
 type Column = typeof columns[number];
 
 const games = ref<Game[]>([])
 const errorMessage = ref('')
 const isLoading = ref(false)
-const pageSize = 5 // Number of games to fetch per page
-const currentPage = ref(1)
-const hasMoreGames = ref(true)
-const sortColumn = ref('date')
-const sortOrder = ref<'asc' | 'desc'>('desc')
 
-const getGameValue = (game: Game, column: Column): string | number => {
+const rankedGames = computed(() => {
+  return games.value.map((game, index) => ({
+    ...game,
+    rank: index + 1
+  }));
+});
+
+const getGameValue = (game: Game & { rank: number }, column: Column): string | number => {
+  if (column === 'rank') {
+    return game.rank;
+  }
+  if (column === 'userId') {
+    return truncateUserId(game.userId);
+  }
   return game[column];
 }
 
-const readGames = async () => {
-  if (!hasMoreGames.value) return
+const truncateUserId = (userId: string): string => {
+  if (userId.length <= 8) return userId;
+  return `${userId.slice(0, 4)}...${userId.slice(-4)}`;
+}
 
+const getWeekStart = (): Date => {
+  const now = new Date();
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  weekStart.setHours(22, 0, 0, 0); // Set to 10 PM
+
+  // If current time is before Sunday 10 PM, adjust to previous week
+  if (now.getDay() === 0 && now.getHours() < 22) {
+    weekStart.setDate(weekStart.getDate() - 7);
+  }
+
+  return weekStart;
+}
+
+const readGames = async () => {
   isLoading.value = true
   errorMessage.value = ''
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('No user logged in')
 
+    const weekStart = getWeekStart();
+
     const { data, error } = await supabase
         .from('games')
         .select('*')
-        .eq('userId', user.id)
-        .order(sortColumn.value, { ascending: sortOrder.value === 'asc' })
-        .range((currentPage.value - 1) * pageSize, currentPage.value * pageSize - 1)
+        .gte('date', weekStart.toISOString())
+        .order('score', { ascending: false })
+        .limit(10)
 
     if (error) throw error
-    if (data.length < pageSize) {
-      hasMoreGames.value = false
-    }
-    games.value = [...games.value, ...(data as Game[])]
+    games.value = data as Game[]
     console.log('Games fetched:', data)
   } catch (error) {
     console.error('Error fetching games:', error)
@@ -66,30 +88,6 @@ const readGames = async () => {
   } finally {
     isLoading.value = false
   }
-}
-
-const loadMoreGames = () => {
-  currentPage.value++
-  readGames()
-}
-
-const sortGames = (column: string) => {
-  if (sortColumn.value === column) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortColumn.value = column
-    sortOrder.value = 'asc'
-  }
-
-  games.value = []
-  currentPage.value = 1
-  hasMoreGames.value = true
-  readGames()
-}
-
-const getSortIcon = (column: string) => {
-  if (sortColumn.value !== column) return 'mdi:sort'
-  return sortOrder.value === 'asc' ? 'mdi:sort-ascending' : 'mdi:sort-descending'
 }
 
 onMounted(() => {
@@ -100,7 +98,10 @@ onMounted(() => {
 <template>
   <Card class="w-full">
     <CardHeader>
-      <CardTitle>Spirit Island Game Results</CardTitle>
+      <CardTitle class="flex items-center gap-2">
+        <Icon icon="mdi:trophy" class="w-6 h-6 text-yellow-500" />
+        Top 10 Games This Week
+      </CardTitle>
     </CardHeader>
     <CardContent>
       <div v-if="errorMessage" class="text-red-500 mb-4">{{ errorMessage }}</div>
@@ -108,31 +109,24 @@ onMounted(() => {
       <Table v-else>
         <TableHeader>
           <TableRow>
-            <TableHead v-for="column in columns"
-                       :key="column"
-                       @click="sortGames(column)"
-                       class="cursor-pointer">
-              {{ column.charAt(0).toUpperCase() + column.slice(1) }}
-              <Icon :icon="getSortIcon(column)" class="inline-block ml-1" />
+            <TableHead v-for="column in columns" :key="column">
+              {{ column === 'rank' ? '#' : column.charAt(0).toUpperCase() + column.slice(1) }}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="game in games" :key="game.id">
+          <TableRow v-for="game in rankedGames" :key="game.id">
             <TableCell v-for="column in columns"
                        :key="column"
                        class="py-4">
-              <template v-if="column === 'islandState' || column === 'result'">
-                <Badge :variant="getGameValue(game, column) === 'Healthy' || getGameValue(game, column) === 'Victory' ? 'default' : 'destructive'" class="gap-1">
+              <template v-if="column === 'result'">
+                <Badge :variant="getGameValue(game, column) === 'Victory' ? 'default' : 'destructive'" class="gap-1">
                   <Icon
-                      :icon="getGameValue(game, column) === 'Healthy' || getGameValue(game, column) === 'Victory' ? 'radix-icons:check' : 'radix-icons:cross-2'"
+                      :icon="getGameValue(game, column) === 'Victory' ? 'radix-icons:check' : 'radix-icons:cross-2'"
                       class="w-3 h-3"
                   />
                   {{ getGameValue(game, column) }}
                 </Badge>
-              </template>
-              <template v-else-if="column === 'fun' || column === 'difficulty'">
-                {{ getGameValue(game, column) }}/10
               </template>
               <template v-else>
                 {{ getGameValue(game, column) }}
@@ -141,9 +135,6 @@ onMounted(() => {
           </TableRow>
         </TableBody>
       </Table>
-      <Button variant="outline" @click="loadMoreGames" :disabled="isLoading || !hasMoreGames" class="mt-4">
-        {{ isLoading ? 'Loading...' : hasMoreGames ? 'Load More Games' : 'No More Games' }}
-      </Button>
     </CardContent>
   </Card>
 </template>
