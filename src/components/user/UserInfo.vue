@@ -104,11 +104,6 @@ const shareProfile = () => {
       <div>
         <p v-if="!isEditing" class="text-sm text-gray-500 dark:text-gray-400">{{ user.bio }}</p>
         <Textarea v-else v-model="tempUser.bio" class="mt-1" />
-        <div class="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
-          <Icon icon="radix-icons:map-pin" class="mr-2 h-4 w-4" />
-          <span v-if="!isEditing">{{ user.location }}</span>
-          <Input v-else v-model="tempUser.location" class="ml-2" />
-        </div>
       </div>
       <div class="mt-auto">
         <Separator class="my-4" />
