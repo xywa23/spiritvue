@@ -33,7 +33,7 @@ const handleLogin = async () => {
 
     console.log('Login successful', data)
     // Redirect to dashboard or home page after successful login
-    router.push('/table')
+    router.push('/leaderboards')
   } catch (error) {
     console.error('Login failed:', error)
     if (error instanceof AuthError) {
