@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Icon } from '@iconify/vue'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
-const user = ref({
+const user = reactive({
   name: 'Jane Doe',
   username: '@janedoe',
   bio: 'UI/UX Designer | Coffee Enthusiast | Travel Lover',
@@ -16,14 +25,67 @@ const user = ref({
 })
 
 const isFollowing = ref(false)
+const isEditing = ref(false)
+
+// Create a temporary user object to hold edits
+const tempUser = reactive({ ...user })
 
 const toggleFollow = () => {
   isFollowing.value = !isFollowing.value
 }
+
+const startEditing = () => {
+  // Copy current user data to tempUser
+  Object.assign(tempUser, user)
+  isEditing.value = true
+}
+
+const saveChanges = () => {
+  // Save changes from tempUser to user
+  Object.assign(user, tempUser)
+  isEditing.value = false
+  // Here you would typically send the updated user data to your backend
+  console.log('Saving changes:', user)
+}
+
+const cancelEditing = () => {
+  isEditing.value = false
+  // Discard changes by not copying from tempUser to user
+}
+
+const shareProfile = () => {
+  // Implement share functionality
+  console.log('Sharing profile...')
+}
 </script>
 
 <template>
-  <Card class="w-full h-full flex flex-col">
+  <Card class="w-full h-full flex flex-col relative">
+    <div class="absolute top-2 right-2 flex space-x-2">
+      <Button v-if="isEditing" variant="default" size="sm" @click="saveChanges">
+        <Icon icon="radix-icons:check" class="mr-2 h-4 w-4" />
+        Save
+      </Button>
+      <Button v-if="isEditing" variant="outline" size="sm" @click="cancelEditing">
+        Cancel
+      </Button>
+      <Button v-if="!isEditing" variant="ghost" size="icon" @click="shareProfile">
+        <Icon icon="radix-icons:share-2" class="w-4 h-4" />
+      </Button>
+      <DropdownMenu v-if="!isEditing">
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Icon icon="radix-icons:dots-horizontal" class="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem @click="startEditing">
+            <Icon icon="radix-icons:pencil-2" class="mr-2 h-4 w-4" />
+            <span>Editar Perfil</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
     <CardHeader>
       <div class="flex items-center space-x-4">
         <Avatar class="h-12 w-12">
@@ -31,31 +93,21 @@ const toggleFollow = () => {
           <AvatarFallback>JD</AvatarFallback>
         </Avatar>
         <div>
-          <CardTitle>{{ user.name }}</CardTitle>
-          <CardDescription>{{ user.username }}</CardDescription>
+          <CardTitle v-if="!isEditing">{{ user.name }}</CardTitle>
+          <Input v-else v-model="tempUser.name" class="mt-1" />
+          <CardDescription v-if="!isEditing">{{ user.username }}</CardDescription>
+          <Input v-else v-model="tempUser.username" class="mt-1" />
         </div>
       </div>
     </CardHeader>
     <CardContent class="flex-grow flex flex-col justify-between">
       <div>
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ user.bio }}</p>
+        <p v-if="!isEditing" class="text-sm text-gray-500 dark:text-gray-400">{{ user.bio }}</p>
+        <Textarea v-else v-model="tempUser.bio" class="mt-1" />
         <div class="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
-          <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="mr-2 h-4 w-4"
-          >
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          {{ user.location }}
+          <Icon icon="radix-icons:map-pin" class="mr-2 h-4 w-4" />
+          <span v-if="!isEditing">{{ user.location }}</span>
+          <Input v-else v-model="tempUser.location" class="ml-2" />
         </div>
       </div>
       <div class="mt-auto">
