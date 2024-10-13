@@ -28,7 +28,7 @@ const allSpirits = [
   { name: 'Starlight Seeks Its Form', icon: 'tabler:sparkles', color: 'grape' },
   { name: 'Downpour Drenches the World', icon: 'tabler:cloud-rain', color: 'grape' },
   { name: 'Finder of Paths Unseen', icon: 'tabler:feather', color: 'cyan' },
-  { name: 'Devouring Teeth Lurk Underfoot', icon: 'tabler:tooth', color: 'yellow' },
+  { name: 'Devouring Teeth Lurk Underfoot', icon: 'tabler:dental', color: 'yellow' },
   { name: 'Eyes Watch from the Trees', icon: 'tabler:eye', color: 'gray' },
   { name: 'Fathomless Mud of the Swamp', icon: 'tabler:bug', color: 'green' },
   { name: 'Rising Heat of Stone and Sand', icon: 'tabler:sun', color: 'red' },
@@ -39,7 +39,7 @@ const allSpirits = [
   { name: 'Breath of Darkness Down Your Spine', icon: 'tabler:skull', color: 'gray' },
   { name: 'Relentless Gaze of the Sun', icon: 'tabler:sun', color: 'yellow' },
   { name: 'Wandering Voice Keens Delirium', icon: 'tabler:ear', color: 'yellow' },
-  { name: 'Wounded Waters Bleeding', icon: 'tabler:waves', color: 'red' },
+  { name: 'Wounded Waters Bleeding', icon: 'tabler:swimming', color: 'red' },
   { name: 'Dances Up Earthquakes', icon: 'tabler:activity', color: 'pink' },
 ]
 
@@ -49,15 +49,15 @@ const topSpirits = computed(() => {
 
 const getBackgroundColor = (color: string) => {
   const colorMap: Record<string, string> = {
-    yellow: 'bg-yellow-400',
-    blue: 'bg-blue-400',
-    gray: 'bg-gray-400',
-    green: 'bg-green-400',
-    red: 'bg-red-400',
-    grape: 'bg-purple-400',
-    orange: 'bg-orange-400',
-    cyan: 'bg-cyan-400',
-    pink: 'bg-pink-400'
+    yellow: 'bg-yellow-500',
+    blue: 'bg-blue-500',
+    gray: 'bg-gray-500',
+    green: 'bg-green-500',
+    red: 'bg-red-500',
+    grape: 'bg-purple-500',
+    orange: 'bg-orange-500',
+    cyan: 'bg-cyan-500',
+    pink: 'bg-pink-500'
   }
   return colorMap[color] || 'bg-gray-200'
 }
