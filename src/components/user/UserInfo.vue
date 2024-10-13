@@ -101,7 +101,7 @@ const startEditing = () => {
 
 const saveChanges = async () => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('profiles')
         .update({
           username: tempUser.username,
@@ -112,11 +112,17 @@ const saveChanges = async () => {
           updatedAt: new Date().toISOString()
         })
         .eq('id', user.id)
+        .select()
 
     if (error) throw error
 
-    Object.assign(user, tempUser)
-    isEditing.value = false
+    if (data && data.length > 0) {
+      // Update the user object with the returned data
+      Object.assign(user, data[0])
+      isEditing.value = false
+    } else {
+      throw new Error('No data returned from update operation')
+    }
   } catch (error) {
     console.error('Error updating profile:', error)
     errorMessage.value = error instanceof Error ? error.message : 'Error updating profile'
