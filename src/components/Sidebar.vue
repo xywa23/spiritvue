@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-const isOpen = ref(true)
+const isOpen = ref(false)  // Changed from true to false
 
 const toggleSidebar = () => {
   isOpen.value = !isOpen.value
