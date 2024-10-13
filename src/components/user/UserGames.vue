@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Icon } from '@iconify/vue'
 import { supabase } from "@/lib/supabase.ts"
+
+// Accept the identifier prop
+const props = defineProps<{
+  identifier: string
+}>()
 
 type Game = {
   id: string;
@@ -34,6 +39,14 @@ const hasMoreGames = ref(true)
 const sortColumn = ref('date')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
+// Modify: Change currentUser to nullable
+const currentUser = ref<any | null>(null)
+
+// Modify: Update isCurrentUserProfile computed property
+const isCurrentUserProfile = computed(() => {
+  return currentUser.value && currentUser.value.id === props.identifier
+})
+
 const getGameValue = (game: Game, column: Column): string | number => {
   return game[column];
 }
@@ -44,14 +57,11 @@ const readGames = async () => {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('No user logged in')
-
     const { data, error } = await supabase
         .from('games')
         .select('*')
-        .eq('userId', user.id)
-        .order('date', { ascending: false })
+        .eq('userId', props.identifier)
+        .order(sortColumn.value, { ascending: sortOrder.value === 'asc' })
         .range((currentPage.value - 1) * pageSize, currentPage.value * pageSize - 1)
 
     if (error) throw error
@@ -92,8 +102,33 @@ const getSortIcon = (column: string) => {
   return sortOrder.value === 'asc' ? 'mdi:sort-ascending' : 'mdi:sort-descending'
 }
 
-onMounted(() => {
+// Modify: Update getCurrentUser function
+const getCurrentUser = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error && error.message !== "Auth session missing!") {
+    console.error('Error fetching current user:', error)
+  }
+  currentUser.value = user
+}
+
+// New: Add edit functionality (placeholder for now)
+const editGame = (gameId: string) => {
+  console.log(`Edit game with ID: ${gameId}`)
+  // Implement edit functionality here
+}
+
+// Watch for changes in the identifier prop
+watch(() => props.identifier, () => {
+  games.value = []
+  currentPage.value = 1
+  hasMoreGames.value = true
   readGames()
+})
+
+// Modify: Update onMounted hook
+onMounted(async () => {
+  await getCurrentUser()
+  await readGames()
 })
 </script>
 
@@ -114,6 +149,10 @@ onMounted(() => {
                        class="cursor-pointer">
               {{ column.charAt(0).toUpperCase() + column.slice(1) }}
               <Icon :icon="getSortIcon(column)" class="inline-block ml-1" />
+            </TableHead>
+            <!-- New: Add an extra header for the Edit column if it's the current user's profile -->
+            <TableHead v-if="isCurrentUserProfile">
+              Edit
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -137,6 +176,13 @@ onMounted(() => {
               <template v-else>
                 {{ getGameValue(game, column) }}
               </template>
+            </TableCell>
+            <!-- New: Add Edit button column if it's the current user's profile -->
+            <TableCell v-if="isCurrentUserProfile">
+              <Button variant="outline" size="sm" @click="editGame(game.id)">
+                <Icon icon="mdi:pencil" class="w-4 h-4 mr-2" />
+                Edit
+              </Button>
             </TableCell>
           </TableRow>
         </TableBody>
