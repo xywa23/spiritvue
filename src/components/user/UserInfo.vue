@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { Icon } from '@iconify/vue'
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { supabase } from "@/lib/supabase.ts"
 import { Separator } from '@/components/ui/separator'
+
 
 
 // Accept the identifier prop
@@ -185,11 +187,25 @@ onMounted(async () => {
           <AvatarImage :src="user.avatarUrl || '/api/placeholder/400/320'" />
           <AvatarFallback class="text-2xl">{{ user.username.substring(0, 2).toUpperCase() }}</AvatarFallback>
         </Avatar>
-        <div>
-          <CardTitle v-if="!isEditing" class="text-3xl font-bold">{{ user.displayName || user.username }}</CardTitle>
-          <Input v-else v-model="tempUser.displayName" class="mt-1 text-2xl" placeholder="Display Name" />
-          <CardDescription v-if="!isEditing" class="text-xl mt-2">@{{ user.username }}</CardDescription>
-          <Input v-else v-model="tempUser.username" class="mt-1 text-xl" placeholder="Username" />
+        <div class="flex-grow">
+          <div class="flex items-center">
+            <CardTitle v-if="!isEditing" class="text-3xl font-bold mr-4">@{{ user.username }}</CardTitle>
+            <Input v-if="isEditing" v-model="tempUser.username" class="text-2xl mr-4" placeholder="Username" />
+            <div class="flex items-center gap-4">
+              <Badge variant="default" class="bg-purple-500">PRO</Badge>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-4">
+            <CardDescription v-if="!isEditing" class="flex items-center">
+              <Icon icon="radix-icons:sewing-pin-filled"  />
+              <span>{{ user.location || 'No location set' }}</span>
+            </CardDescription>
+            <Input v-if="isEditing" v-model="tempUser.location" class="text-sm" placeholder="Location" />
+            <Button v-if="!isCurrentUserProfile && !isEditing" variant="link" size="sm" @click="toggleFollow">
+              <Icon :icon="isFollowing ? 'radix-icons:minus-circled' : 'radix-icons:plus-circled'" class="mr-2 h-4 w-4" />
+              {{ isFollowing ? 'Unfollow' : 'Follow' }}
+            </Button>
+          </div>
         </div>
       </div>
     </CardHeader>
@@ -199,7 +215,7 @@ onMounted(async () => {
         <Textarea v-else v-model="tempUser.bio" class="mt-1" placeholder="Bio" />
 
         <!-- Updated element with custom colored Separators -->
-        <div class="mt-4 flex justify-center w-full text-xs">
+        <div class="mt-16 flex justify-center w-full text-sm">
           <div class="flex items-center space-x-7">
             <div class="flex flex-col items-center">
               <span class="text-4xl font-semibold">{{ user.loggedGames }}</span>
@@ -224,12 +240,6 @@ onMounted(async () => {
         </div>
       </div>
     </CardContent>
-    <CardFooter class="flex justify-between">
-      <Button v-if="!isCurrentUserProfile" variant="outline" @click="toggleFollow">
-        {{ isFollowing ? 'Unfollow' : 'Follow' }}
-      </Button>
-      <Button v-if="!isCurrentUserProfile" variant="outline">Message</Button>
-    </CardFooter>
   </Card>
   <div v-else class="flex justify-center items-center h-full">
     <p>Loading profile...</p>
