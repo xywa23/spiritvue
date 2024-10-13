@@ -3,7 +3,6 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Icon } from '@iconify/vue'
@@ -14,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { supabase } from "@/lib/supabase.ts"
+import { Separator } from '@/components/ui/separator'
+
 
 // Accept the identifier prop
 const props = defineProps<{
@@ -29,6 +30,9 @@ interface Profile {
   avatarUrl: string | null;
   location: string | null;
   website: string | null;
+  loggedGames: number;
+  followers: number;
+  following: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -42,6 +46,9 @@ const user = reactive<Profile>({
   avatarUrl: null,
   location: null,
   website: null,
+  loggedGames: 12,
+  followers: 4,
+  following: 5,
   createdAt: null,
   updatedAt: null
 })
@@ -173,16 +180,16 @@ onMounted(async () => {
       </DropdownMenu>
     </div>
     <CardHeader>
-      <div class="flex items-center space-x-4">
-        <Avatar class="h-12 w-12">
+      <div class="flex items-center space-x-6">
+        <Avatar class="h-24 w-24">
           <AvatarImage :src="user.avatarUrl || '/api/placeholder/400/320'" />
-          <AvatarFallback>{{ user.username.substring(0, 2).toUpperCase() }}</AvatarFallback>
+          <AvatarFallback class="text-2xl">{{ user.username.substring(0, 2).toUpperCase() }}</AvatarFallback>
         </Avatar>
         <div>
-          <CardTitle v-if="!isEditing">{{ user.displayName || user.username }}</CardTitle>
-          <Input v-else v-model="tempUser.displayName" class="mt-1" placeholder="Display Name" />
-          <CardDescription v-if="!isEditing">@{{ user.username }}</CardDescription>
-          <Input v-else v-model="tempUser.username" class="mt-1" placeholder="Username" />
+          <CardTitle v-if="!isEditing" class="text-3xl font-bold">{{ user.displayName || user.username }}</CardTitle>
+          <Input v-else v-model="tempUser.displayName" class="mt-1 text-2xl" placeholder="Display Name" />
+          <CardDescription v-if="!isEditing" class="text-xl mt-2">@{{ user.username }}</CardDescription>
+          <Input v-else v-model="tempUser.username" class="mt-1 text-xl" placeholder="Username" />
         </div>
       </div>
     </CardHeader>
@@ -190,20 +197,30 @@ onMounted(async () => {
       <div>
         <p v-if="!isEditing" class="text-sm text-gray-500 dark:text-gray-400">{{ user.bio }}</p>
         <Textarea v-else v-model="tempUser.bio" class="mt-1" placeholder="Bio" />
+
+        <!-- Updated element with custom colored Separators -->
+        <div class="mt-4 flex justify-center w-full text-xs">
+          <div class="flex items-center space-x-7">
+            <div class="flex flex-col items-center">
+              <span class="text-4xl font-semibold">{{ user.loggedGames }}</span>
+              <span class="text-gray-500 dark:text-gray-400">Logged Games</span>
+            </div>
+            <Separator orientation="vertical" class="h-10 w-px bg-gray-300 dark:bg-gray-700 self-center" />
+            <div class="flex flex-col items-center">
+              <span class="text-4xl font-semibold">{{ user.followers }}</span>
+              <span class="text-gray-500 dark:text-gray-400">Followers</span>
+            </div>
+            <Separator orientation="vertical" class="h-10 w-px bg-gray-300 dark:bg-gray-700 self-center" />
+            <div class="flex flex-col items-center">
+              <span class="text-4xl font-semibold">{{ user.following }}</span>
+              <span class="text-gray-500 dark:text-gray-400">Following</span>
+            </div>
+          </div>
+        </div>
+
         <div v-if="!isEditing" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
           <p v-if="user.location"><Icon icon="radix-icons:map-pin" class="inline mr-1" /> {{ user.location }}</p>
           <p v-if="user.website"><Icon icon="radix-icons:link-2" class="inline mr-1" /> {{ user.website }}</p>
-        </div>
-      </div>
-      <div class="mt-auto">
-        <Separator class="my-4" />
-        <div class="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-          <div>
-            <strong class="text-gray-900 dark:text-gray-100">{{ user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' }}</strong> Joined
-          </div>
-          <div>
-            <strong class="text-gray-900 dark:text-gray-100">{{ user.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : 'N/A' }}</strong> Last updated
-          </div>
         </div>
       </div>
     </CardContent>
