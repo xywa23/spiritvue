@@ -215,7 +215,7 @@ onMounted(async () => {
         <Textarea v-else v-model="tempUser.bio" class="mt-1" placeholder="Bio" />
 
         <!-- Updated element with custom colored Separators -->
-        <div class="mt-16 flex justify-center w-full text-sm">
+        <div class="mt-12 flex justify-center w-full text-sm">
           <div class="flex items-center space-x-7">
             <div class="flex flex-col items-center">
               <span class="text-4xl font-semibold">{{ user.loggedGames }}</span>
