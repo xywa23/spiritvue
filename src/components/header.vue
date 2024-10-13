@@ -61,7 +61,11 @@ const calculatedScore = computed(() => {
 })
 
 const handleViewUser = () => {
-  router.push('/user-profile')
+  if (props.session && props.session.user) {
+    router.push(`/user-profile/${props.session.user.id}`)
+  } else {
+    console.error('User is not logged in')
+  }
 }
 
 const handleViewCharts = () => {
