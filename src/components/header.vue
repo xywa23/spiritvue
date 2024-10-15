@@ -50,6 +50,70 @@ const newGame = ref({
   score: 0
 })
 
+// Define the Game interface
+interface Game {
+  userId: string;
+  date: string;
+  numPlayers: number;
+  spirits: string[];
+  adversary: string;
+  adversaryDifficulty: number;
+  scenario: string;
+  board: string[];
+  result: 'Victory' | 'Defeat';
+  terrorLevel: number;
+  islandState: string;
+  fun: number;
+  blightOnIsland: number;
+  cardsNotInDeck: number;
+  cardsRemainingInDeck: number;
+  difficulty: number;
+  remainingDahan: number;
+  score: number;
+}
+
+type AchievementCondition = ((games: Game[]) => boolean) | ((games: Game[], game: Game) => boolean);
+
+const achievements: Array<{
+  id: string;
+  title: string;
+  condition: AchievementCondition;
+}> = [
+  { id: '1', title: 'First Step', condition: (games: Game[]) => games.length === 1 },
+  { id: '2', title: 'Getting Started', condition: (games: Game[]) => games.length === 5 },
+  { id: '3', title: 'Regular Player', condition: (games: Game[]) => games.length === 25 },
+  { id: '4', title: 'Dedicated Gamer', condition: (games: Game[]) => games.length === 50 },
+  { id: '5', title: 'Century Club', condition: (games: Game[]) => games.length === 100 },
+  { id: '6', title: 'Prussian Victory', condition: (_: Game[], game: Game) => game.adversary === 'Brandenburg-Prussia' && game.result === 'Victory' },
+  { id: '7', title: 'English Conquest', condition: (_: Game[], game: Game) => game.adversary === 'England' && game.result === 'Victory' },
+  { id: '8', title: 'Swedish Triumph', condition: (_: Game[], game: Game) => game.adversary === 'Sweden' && game.result === 'Victory' },
+  { id: '9', title: 'French Colonial Victory', condition: (_: Game[], game: Game) => game.adversary === 'France (Plantation Colony)' && game.result === 'Victory' },
+  { id: '10', title: 'Habsburg Livestock Defeat', condition: (_: Game[], game: Game) => game.adversary === 'Habsburg Monarchy (Livestock Colony)' && game.result === 'Victory' },
+  { id: '11', title: 'Russian Conquest', condition: (_: Game[], game: Game) => game.adversary === 'Russia' && game.result === 'Victory' },
+  { id: '12', title: 'Scottish Victory', condition: (_: Game[], game: Game) => game.adversary === 'Scotland' && game.result === 'Victory' },
+  { id: '13', title: 'Habsburg Mining Triumph', condition: (_: Game[], game: Game) => game.adversary === 'Habsburg Mining Expedition' && game.result === 'Victory' },
+  { id: '14', title: 'Prussian Mastery', condition: (_: Game[], game: Game) => game.adversary === 'Brandenburg-Prussia' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '15', title: 'English Domination', condition: (_: Game[], game: Game) => game.adversary === 'England' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '16', title: 'Swedish Supremacy', condition: (_: Game[], game: Game) => game.adversary === 'Sweden' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '17', title: 'French Colonial Mastery', condition: (_: Game[], game: Game) => game.adversary === 'France (Plantation Colony)' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '18', title: 'Habsburg Livestock Mastery', condition: (_: Game[], game: Game) => game.adversary === 'Habsburg Monarchy (Livestock Colony)' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '19', title: 'Russian Domination', condition: (_: Game[], game: Game) => game.adversary === 'Russia' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '20', title: 'Scottish Supremacy', condition: (_: Game[], game: Game) => game.adversary === 'Scotland' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '21', title: 'Habsburg Mining Mastery', condition: (_: Game[], game: Game) => game.adversary === 'Habsburg Mining Expedition' && game.adversaryDifficulty === 6 && game.result === 'Victory' },
+  { id: '22', title: 'Base Game Master', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 4 },
+  { id: '23', title: 'Branch & Claw Explorer', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 6 },
+  { id: '24', title: 'Jagged Earth Conqueror', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 16 },
+  { id: '25', title: 'Promo Pack II Enthusiast', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 18 },
+  { id: '26', title: 'Horizons Adventurer', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 23 },
+  { id: '27', title: 'Nature Incarnate Channeler', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 28 },
+  { id: '28', title: 'Spirit Island Completionist', condition: (games: Game[]) => new Set(games.flatMap(g => g.spirits)).size >= 33 },
+  { id: '29', title: 'High Scorer', condition: (games: Game[]) => Math.max(...games.map(g => g.score)) >= 100 },
+  { id: '30', title: 'Difficulty Master', condition: (games: Game[]) => Math.max(...games.map(g => g.difficulty)) >= 10 },
+  { id: '31', title: 'Blight Controller', condition: (_: Game[], game: Game) => game.blightOnIsland === 0 && game.result === 'Victory' },
+  { id: '32', title: 'Dahan Protector', condition: (_: Game[], game: Game) => game.remainingDahan >= 10 && game.result === 'Victory' },
+  { id: '33', title: 'Card Efficiency', condition: (_: Game[], game: Game) => game.cardsRemainingInDeck >= 10 && game.result === 'Victory' },
+]
+
 // Computed properties for difficulty and score
 const calculatedDifficulty = computed(() => {
   return newGame.value.adversaryDifficulty // Placeholder
@@ -89,21 +153,106 @@ const handleLogOut = async () => {
 const handleSubmit = async () => {
   try {
     if (!props.session) {
+      console.log('No session found. User must be logged in to create a game.')
       errorMessage.value = 'You must be logged in to create a game.'
       return
     }
 
-    const { data, error } = await supabase
+    const userId = props.session.user.id
+    console.log('User ID:', userId)
+
+    // Insert the new game
+    const { data: gameData, error: gameError } = await supabase
         .from('games')
-        .insert([{ ...newGame.value, userId: props.session.user.id }])
+        .insert([{ ...newGame.value, userId }])
         .select()
 
-    if (error) throw error
-    console.log('Game created:', data)
+    if (gameError) {
+      console.error('Error inserting new game:', gameError)
+      throw gameError
+    }
+
+    console.log('Game created:', gameData)
+
+    // Fetch all games for the user to check achievements
+    const { data: userGames, error: gamesError } = await supabase
+        .from('games')
+        .select('*')
+        .eq('userId', userId)
+
+    if (gamesError) {
+      console.error('Error fetching user games:', gamesError)
+      throw gamesError
+    }
+
+    console.log('Total user games:', userGames.length)
+
+    // Calculate achievements
+    console.log('Checking for new achievements...')
+    const newAchievements = achievements.filter(achievement => {
+      const condition = achievement.condition;
+      let result;
+      if (condition.length === 1) {
+        result = (condition as (games: Game[]) => boolean)(userGames as Game[]);
+      } else {
+        result = (condition as (games: Game[], game: Game) => boolean)(userGames as Game[], gameData[0] as Game);
+      }
+      console.log(`Achievement "${achievement.title}" condition met:`, result)
+      return result;
+    });
+
+    console.log('Potential new achievements:', newAchievements)
+
+    // Fetch existing user achievements
+    const { data: existingAchievements, error: existingAchievementsError } = await supabase
+        .from('user_achievements')
+        .select('achievement_id')
+        .eq('user_id', userId)
+
+    if (existingAchievementsError) {
+      console.error('Error fetching existing achievements:', existingAchievementsError)
+      throw existingAchievementsError
+    }
+
+    console.log('Existing achievements:', existingAchievements)
+
+    // Filter out achievements the user already has
+    const uniqueNewAchievements = newAchievements.filter(achievement =>
+        !existingAchievements.some(existing => existing.achievement_id === achievement.id)
+    );
+
+    console.log('Unique new achievements:', uniqueNewAchievements)
+
+    // Insert new achievements
+    if (uniqueNewAchievements.length > 0) {
+      const { error: achievementsError } = await supabase
+          .from('user_achievements')
+          .insert(
+              uniqueNewAchievements.map(achievement => ({
+                user_id: userId,
+                achievement_id: achievement.id,
+              }))
+          )
+
+      if (achievementsError) {
+        console.error('Error inserting new achievements:', achievementsError)
+        throw achievementsError
+      }
+
+      console.log('New achievements inserted successfully')
+
+      // Notify user about new achievements
+      const achievementMessage = `Congratulations! You've earned ${uniqueNewAchievements.length} new achievement${uniqueNewAchievements.length > 1 ? 's' : ''}:\n${uniqueNewAchievements.map(a => a.title).join('\n')}`
+      console.log(achievementMessage)
+      alert(achievementMessage)
+    } else {
+      console.log('No new achievements earned')
+    }
+
     closeModal()
     // Optionally, you can reset the form or fetch updated game list here
   } catch (error: unknown) {
-    console.error('Error creating game:', error)
+    console.error('Error in handleSubmit:', error)
     if (error instanceof Error) {
       errorMessage.value = error.message
     } else if (typeof error === 'object' && error !== null && 'message' in error) {

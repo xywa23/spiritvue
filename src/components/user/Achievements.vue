@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Icon } from '@iconify/vue'
 import { supabase } from "@/lib/supabase.ts";
 import { User } from "@supabase/supabase-js";
+
+// Accept the identifier prop
+const props = defineProps<{
+  identifier: string
+}>()
 
 interface Achievement {
   id: number;
@@ -28,6 +33,10 @@ const isLoading = ref(true)
 const errorMessage = ref('')
 const currentUser = ref<User | null>(null)
 
+const isCurrentUserProfile = computed(() => {
+  return currentUser.value && currentUser.value.id === props.identifier
+})
+
 const rarityClasses = {
   common: 'text-green-600 dark:text-green-500',
   rare: 'text-purple-600 dark:text-purple-500',
@@ -50,10 +59,8 @@ const getIconClass = (achievement: Achievement) => {
 
 const getCurrentUser = async (): Promise<User | null> => {
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error) {
+  if (error && error.message !== "Auth session missing!") {
     console.error('Error fetching current user:', error)
-    errorMessage.value = 'Error fetching user data'
-    return null
   }
   return user
 }
@@ -63,56 +70,37 @@ async function fetchAchievements() {
   errorMessage.value = ''
   try {
     currentUser.value = await getCurrentUser()
-    if (!currentUser.value) {
-      throw new Error('No authenticated user found')
-    }
-    console.log('Current user:', currentUser.value.id)
 
-    // Fetch all achievements
-    const { data: allAchievements, error: achievementsError } = await supabase
-        .from('achievements')
-        .select('*')
+    const [allAchievements, userAchievements] = await Promise.all([
+      fetchAllAchievements(),
+      fetchUserAchievements(props.identifier)
+    ])
 
-    if (achievementsError) throw achievementsError
-    console.log('All achievements:', allAchievements)
+    const userAchievementIds = new Set(userAchievements.map(ua => ua.achievement_id))
 
-    // Fetch user achievements using raw SQL query
-    const { data: userAchievements, error: userAchievementsError } = await supabase
-        .rpc('get_user_achievements', { user_id: currentUser.value.id })
+    achievements.value = allAchievements.map(achievement => ({
+      ...achievement,
+      isActive: userAchievementIds.has(achievement.id)
+    }))
 
-    if (userAchievementsError) {
-      console.error('Error fetching user achievements:', userAchievementsError)
-      throw userAchievementsError
-    }
-
-    console.log('Raw user achievements data:', userAchievements)
-
-    if (!userAchievements || userAchievements.length === 0) {
-      console.warn('No user achievements found for user ID:', currentUser.value.id)
-    }
-
-    // Create a Set of the user's achievement IDs for faster lookup
-    const userAchievementIds = new Set(userAchievements?.map((ua: UserAchievement) => ua.achievement_id) || [])
-    console.log('User achievement IDs:', Array.from(userAchievementIds))
-
-    // Map all achievements and set isActive based on user achievements
-    achievements.value = allAchievements.map((achievement: Achievement) => {
-      const isActive = userAchievementIds.has(achievement.id)
-      console.log(`Achievement ${achievement.id} isActive:`, isActive)
-      return {
-        ...achievement,
-        isActive
-      }
-    })
-
-    console.log('Final achievements array:', achievements.value)
-
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in fetchAchievements:', error)
     errorMessage.value = error instanceof Error ? error.message : 'Error fetching achievements'
   } finally {
     isLoading.value = false
   }
+}
+
+async function fetchAllAchievements(): Promise<Achievement[]> {
+  const { data, error } = await supabase.from('achievements').select('*')
+  if (error) throw new Error('Failed to fetch all achievements')
+  return data
+}
+
+async function fetchUserAchievements(userId: string): Promise<UserAchievement[]> {
+  const { data, error } = await supabase.rpc('get_user_achievements', { user_id: userId })
+  if (error) throw new Error('Failed to fetch user achievements')
+  return data || []
 }
 
 onMounted(fetchAchievements)
@@ -121,7 +109,7 @@ onMounted(fetchAchievements)
 <template>
   <Card class="w-full">
     <CardHeader>
-      <CardTitle>Achievements</CardTitle>
+      <CardTitle>Achievements{{ isCurrentUserProfile ? '' : '' }}</CardTitle>
     </CardHeader>
     <CardContent>
       <div v-if="isLoading" class="text-center py-4">Loading achievements...</div>
