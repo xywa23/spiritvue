@@ -15,8 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { supabase } from "@/lib/supabase.ts"
 import { Separator } from '@/components/ui/separator'
-
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { countries }  from '@/components/countries'
 
 // Accept the identifier prop
 const props = defineProps<{
@@ -197,10 +197,19 @@ onMounted(async () => {
           </div>
           <div class="flex items-center justify-between mt-4">
             <CardDescription v-if="!isEditing" class="flex items-center">
-              <Icon icon="radix-icons:sewing-pin-filled"  />
+              <Icon icon="radix-icons:sewing-pin-filled" class="mr-1" />
               <span>{{ user.location || 'No location set' }}</span>
             </CardDescription>
-            <Input v-if="isEditing" v-model="tempUser.location" class="text-sm" placeholder="Location" />
+            <Select v-if="isEditing" v-model="tempUser.location">
+              <SelectTrigger class="w-[180px]">
+                <SelectValue placeholder="Select a country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="country in countries" :key="country" :value="country">
+                  {{ country }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <Button v-if="!isCurrentUserProfile && !isEditing" variant="link" size="sm" @click="toggleFollow">
               <Icon :icon="isFollowing ? 'radix-icons:minus-circled' : 'radix-icons:plus-circled'" class="mr-2 h-4 w-4" />
               {{ isFollowing ? 'Unfollow' : 'Follow' }}
@@ -235,7 +244,6 @@ onMounted(async () => {
         </div>
 
         <div v-if="!isEditing" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          <p v-if="user.location"><Icon icon="radix-icons:map-pin" class="inline mr-1" /> {{ user.location }}</p>
           <p v-if="user.website"><Icon icon="radix-icons:link-2" class="inline mr-1" /> {{ user.website }}</p>
         </div>
       </div>

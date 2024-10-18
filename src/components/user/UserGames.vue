@@ -187,7 +187,7 @@ onMounted(async () => {
           </TableRow>
         </TableBody>
       </Table>
-      <Button variant="outline" @click="loadMoreGames" :disabled="isLoading || !hasMoreGames" class="mt-4">
+      <Button variant="secondary" @click="loadMoreGames" :disabled="isLoading || !hasMoreGames" class="mt-4">
         {{ isLoading ? 'Loading...' : hasMoreGames ? 'Load More Games' : 'No More Games' }}
       </Button>
     </CardContent>
