@@ -30,7 +30,7 @@ interface Profile {
   displayName: string;
   bio: string;
   avatarUrl: string | null;
-  location: string | null;
+  location: string | undefined;
   website: string | null;
   loggedGames: number;
   followers: number;
@@ -46,7 +46,7 @@ const user = reactive<Profile>({
   displayName: '',
   bio: '',
   avatarUrl: null,
-  location: null,
+  location: undefined,
   website: null,
   loggedGames: 12,
   followers: 4,
