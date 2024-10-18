@@ -17,8 +17,8 @@ const props = defineProps<{
     </div>
 
     <div class="w-[calc(50%-0.5rem)] flex flex-col gap-4">
-      <Achievements :identifier="identifier" />
       <TopSpirits :identifier="identifier" />
+      <Achievements :identifier="identifier" />
     </div>
 
     <div class="w-full">
