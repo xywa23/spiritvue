@@ -12,12 +12,12 @@ const props = defineProps<{
 
 <template>
   <div class="flex flex-wrap gap-4">
-    <div class="w-[calc(50%-0.5rem)]">
+    <div class="w-[calc(50%-0.5rem)] flex flex-col gap-4">
       <UserInfo :identifier="identifier" />
+      <TopSpirits :identifier="identifier" />
     </div>
 
     <div class="w-[calc(50%-0.5rem)] flex flex-col gap-4">
-      <TopSpirits :identifier="identifier" />
       <Achievements :identifier="identifier" />
     </div>
 

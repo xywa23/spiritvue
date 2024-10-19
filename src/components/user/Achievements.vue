@@ -42,9 +42,9 @@ const errorMessage = ref('')
 const currentUser = ref<User | null>(null)
 const isModalOpen = ref(false)
 
-const displayedAchievements = computed(() => achievements.value.slice(0, 6))
+const displayedAchievements = computed(() => achievements.value.slice(0, 9))
 
-const hasMoreAchievements = computed(() => achievements.value.length > 6)
+const hasMoreAchievements = computed(() => achievements.value.length > 9)
 
 const rarityClasses = {
   common: 'text-green-600 dark:text-green-500',
