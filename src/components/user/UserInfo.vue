@@ -17,6 +17,9 @@ import { supabase } from "@/lib/supabase.ts"
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { countries }  from '@/components/countries'
+import { useToast } from '@/components/ui/toast' // Import the toast hook
+
+const { toast } = useToast()
 
 // Accept the identifier prop
 const props = defineProps<{
@@ -110,11 +113,32 @@ const toggleFollow = () => {
 const avatarFile = ref<File | null>(null)
 const avatarPreview = ref<string | null>(null)
 
+const validateAvatarFile = (file: File): string | null => {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['image/jpeg', 'image/png'];
+
+  if (file.size > maxSize) {
+    return 'File size exceeds 5MB limit';
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    return 'File type not allowed. Please use JPEG or PNG';
+  }
+
+  return null;
+}
+
 const handleAvatarChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
+  const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    avatarFile.value = target.files[0]
-    avatarPreview.value = URL.createObjectURL(avatarFile.value)
+    const file = target.files[0];
+    const error = validateAvatarFile(file);
+    if (error) {
+      errorMessage.value = error;
+      return;
+    }
+    avatarFile.value = file;
+    avatarPreview.value = URL.createObjectURL(avatarFile.value);
   }
 }
 
@@ -129,12 +153,110 @@ const cancelEditing = () => {
   avatarFile.value = null
   avatarPreview.value = null
 }
+const uploadAvatar = async (): Promise<string | null> => {
+  console.log('Starting avatar upload process')
+  if (!avatarFile.value || !currentUser.value) {
+    console.log('No avatar file or current user, skipping upload')
+    return null
+  }
+
+  const fileExt = avatarFile.value.name.split('.').pop()
+  const fileName = `${currentUser.value.id}/avatar.${fileExt}`
+  console.log(`Preparing to upload file: ${fileName}`)
+
+  try {
+    // First, attempt to remove the existing avatar
+    if (user.avatarUrl) {
+      const existingFilePath = user.avatarUrl.split('/').pop()
+      if (existingFilePath) {
+        console.log(`Attempting to remove existing avatar: ${existingFilePath}`)
+        const { error: removeError } = await supabase.storage
+            .from('avatars')
+            .remove([`${currentUser.value.id}/${existingFilePath}`])
+
+        if (removeError) {
+          console.warn('Failed to remove existing avatar:', removeError)
+        } else {
+          console.log('Successfully removed existing avatar')
+        }
+      }
+    }
+
+    // Upload the new avatar
+    console.log('Uploading new avatar')
+    const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile.value, { upsert: true })
+
+    if (uploadError) {
+      console.error('Upload error details:', uploadError)
+      throw new Error(`Error uploading avatar: ${uploadError.message}`)
+    }
+
+    if (!data) {
+      console.error('No data returned from upload')
+      throw new Error('No data returned from upload')
+    }
+
+    console.log('Avatar uploaded successfully, getting public URL')
+    const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+    console.log(`New avatar public URL: ${urlData.publicUrl}`)
+    return urlData.publicUrl
+  } catch (error) {
+    console.error('Avatar upload failed:', error)
+    throw error
+  }
+}
+
+const avatarKey = ref(0)
+
 const saveChanges = async () => {
+  console.log('Starting saveChanges process')
+  if (!currentUser.value) {
+    console.log('No current user, aborting saveChanges')
+    errorMessage.value = 'You must be logged in to update your profile';
+    return;
+  }
   try {
     if (tempUser.bio.length > BIO_MAX_LENGTH) {
+      console.log(`Bio exceeds maximum length: ${tempUser.bio.length}/${BIO_MAX_LENGTH}`)
       throw new Error(`Bio exceeds maximum length of ${BIO_MAX_LENGTH} characters`)
     }
 
+    let newAvatarUrl = user.avatarUrl
+    console.log(`Current avatar URL: ${newAvatarUrl}`)
+
+    if (avatarFile.value) {
+      console.log('New avatar file detected, starting upload process')
+      try {
+        newAvatarUrl = await uploadAvatar()
+        if (!newAvatarUrl) {
+          console.error('Failed to upload avatar: No URL returned')
+          throw new Error('Failed to upload avatar')
+        }
+        console.log(`New avatar URL after upload: ${newAvatarUrl}`)
+      } catch (uploadError) {
+        console.error('Avatar upload error:', uploadError)
+        if (uploadError instanceof Error) {
+          throw new Error(`Failed to upload avatar: ${uploadError.message}`)
+        } else {
+          throw new Error('Failed to upload avatar: Unknown error')
+        }
+      }
+    } else {
+      console.log('No new avatar file, skipping upload')
+    }
+
+    // Add a timestamp to the avatar URL for cache busting
+    if (newAvatarUrl) {
+      const timestamp = new Date().getTime()
+      newAvatarUrl = `${newAvatarUrl}?t=${timestamp}`
+    }
+
+    console.log('Updating profile in database')
     const { data, error } = await supabase
         .from('profiles')
         .update({
@@ -143,23 +265,54 @@ const saveChanges = async () => {
           bio: tempUser.bio,
           location: tempUser.location,
           website: tempUser.website,
+          avatarUrl: newAvatarUrl,
           updatedAt: new Date().toISOString()
         })
         .eq('id', user.id)
         .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('Profile update error:', error)
+      throw new Error(`Error updating profile: ${error.message}`)
+    }
 
     if (data && data.length > 0) {
-      // Update the user object with the returned data
+      console.log('Profile updated successfully, updating local user object')
+      console.log('New profile data:', data[0])
+      // Update the user object with the new data
       Object.assign(user, data[0])
+
+      console.log('Forcing avatar refresh')
+      // Force avatar refresh by updating the key
+      avatarKey.value += 1
+      console.log(`New avatarKey value: ${avatarKey.value}`)
+
       isEditing.value = false
+      avatarFile.value = null
+      avatarPreview.value = null
+
+      console.log('Profile update complete, showing success toast')
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+        variant: "default",
+        duration: 5000,
+      })
     } else {
+      console.error('No data returned from update operation')
       throw new Error('No data returned from update operation')
     }
   } catch (error) {
-    console.error('Error updating profile:', error)
+    console.error('Error in saveChanges:', error)
     errorMessage.value = error instanceof Error ? error.message : 'Error updating profile'
+
+    console.log('Profile update failed, showing error toast')
+    toast({
+      title: "Update Failed",
+      description: errorMessage.value,
+      variant: "destructive",
+      duration: 5000,
+    })
   }
 }
 
