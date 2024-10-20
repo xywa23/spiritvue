@@ -12,13 +12,17 @@ const props = defineProps<{
 
 <template>
   <div class="flex flex-wrap gap-4">
-    <div class="w-[calc(50%-0.5rem)] flex flex-col gap-4">
-      <UserInfo :identifier="identifier" />
-      <TopSpirits :identifier="identifier" />
+    <div class="w-[calc(50%-0.5rem)] flex flex-col">
+      <div class="flex-grow">
+        <UserInfo :identifier="identifier" />
+      </div>
+      <div class="mt-4 flex-grow">
+        <TopSpirits :identifier="identifier" />
+      </div>
     </div>
 
-    <div class="w-[calc(50%-0.5rem)] flex flex-col gap-4">
-      <Achievements :identifier="identifier" />
+    <div class="w-[calc(50%-0.5rem)] flex">
+      <Achievements :identifier="identifier" class="flex-grow" />
     </div>
 
     <div class="w-full">
@@ -26,3 +30,10 @@ const props = defineProps<{
     </div>
   </div>
 </template>
+
+<style scoped>
+.flex-grow {
+  flex-grow: 1;
+  min-height: 0;
+}
+</style>

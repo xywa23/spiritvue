@@ -68,6 +68,10 @@ const isCurrentUserProfile = computed(() => {
   return currentUser.value && currentUser.value.id === user.userId
 })
 
+const BIO_MAX_LENGTH = 278 // Set the maximum character limit for the bio
+
+const bioCharCount = computed(() => tempUser.bio.length)
+
 const fetchUserProfile = async () => {
   isLoading.value = true
   errorMessage.value = ''
@@ -103,13 +107,34 @@ const toggleFollow = () => {
   // Implement follow/unfollow logic here
 }
 
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref<string | null>(null)
+
+const handleAvatarChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    avatarFile.value = target.files[0]
+    avatarPreview.value = URL.createObjectURL(avatarFile.value)
+  }
+}
+
 const startEditing = () => {
   Object.assign(tempUser, user)
+  avatarPreview.value = user.avatarUrl
   isEditing.value = true
 }
 
+const cancelEditing = () => {
+  isEditing.value = false
+  avatarFile.value = null
+  avatarPreview.value = null
+}
 const saveChanges = async () => {
   try {
+    if (tempUser.bio.length > BIO_MAX_LENGTH) {
+      throw new Error(`Bio exceeds maximum length of ${BIO_MAX_LENGTH} characters`)
+    }
+
     const { data, error } = await supabase
         .from('profiles')
         .update({
@@ -138,10 +163,6 @@ const saveChanges = async () => {
   }
 }
 
-const cancelEditing = () => {
-  isEditing.value = false
-}
-
 const shareProfile = () => {
   // Implement share functionality
   console.log('Sharing profile...')
@@ -156,74 +177,100 @@ onMounted(async () => {
 <template>
   <Card class="w-full h-full flex flex-col relative" v-if="!isLoading">
     <div v-if="errorMessage" class="text-red-500 p-4">{{ errorMessage }}</div>
-    <div class="absolute top-2 right-2 flex space-x-2">
-      <Button v-if="isEditing && isCurrentUserProfile" variant="default" size="sm" @click="saveChanges">
-        <Icon icon="radix-icons:check" class="mr-2 h-4 w-4" />
-        Save
-      </Button>
-      <Button v-if="isEditing && isCurrentUserProfile" variant="outline" size="sm" @click="cancelEditing">
-        Cancel
-      </Button>
-      <Button v-if="!isEditing" variant="ghost" size="icon" @click="shareProfile">
-        <Icon icon="radix-icons:share-2" class="w-4 h-4" />
-      </Button>
-      <DropdownMenu v-if="!isEditing && isCurrentUserProfile">
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Icon icon="radix-icons:dots-horizontal" class="w-4 h-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem @click="startEditing">
-            <Icon icon="radix-icons:pencil-2" class="mr-2 h-4 w-4" />
-            <span>Edit Profile</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
     <CardHeader>
-      <div class="flex items-center space-x-6">
-        <Avatar class="h-24 w-24">
-          <AvatarImage :src="user.avatarUrl || '/api/placeholder/400/320'" />
-          <AvatarFallback class="text-2xl">{{ user.username.substring(0, 2).toUpperCase() }}</AvatarFallback>
-        </Avatar>
-        <div class="flex-grow">
-          <div class="flex items-center">
-            <CardTitle v-if="!isEditing" class="text-3xl font-bold mr-4">@{{ user.username }}</CardTitle>
-            <Input v-if="isEditing" v-model="tempUser.username" class="text-2xl mr-4" placeholder="Username" />
-            <div class="flex items-center gap-4">
-              <Badge variant="default" class="bg-purple-500">PRO</Badge>
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-6">
+          <div class="relative">
+            <Avatar class="h-24 w-24">
+              <AvatarImage :src="isEditing ? (avatarPreview || user.avatarUrl || '/api/placeholder/400/320') : (user.avatarUrl || '/api/placeholder/400/320')" />
+              <AvatarFallback class="text-2xl">{{ user.username.substring(0, 2).toUpperCase() }}</AvatarFallback>
+            </Avatar>
+            <div v-if="isEditing" class="absolute bottom-0 right-0">
+              <label for="avatar-upload" class="cursor-pointer">
+        <span class="bg-primary text-primary-foreground rounded-full p-2 inline-block">
+          <Icon icon="radix-icons:pencil-2" class="w-4 h-4" />
+        </span>
+              </label>
+              <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleAvatarChange"
+              >
             </div>
           </div>
-          <div class="flex items-center justify-between mt-4">
-            <CardDescription v-if="!isEditing" class="flex items-center">
-              <Icon icon="radix-icons:sewing-pin-filled" class="mr-1" />
-              <span>{{ user.location || 'No location set' }}</span>
-            </CardDescription>
-            <Select v-if="isEditing" v-model="tempUser.location">
-              <SelectTrigger class="w-[180px]">
-                <SelectValue placeholder="Select a country" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="country in countries" :key="country" :value="country">
-                  {{ country }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button v-if="!isCurrentUserProfile && !isEditing" variant="link" size="sm" @click="toggleFollow">
-              <Icon :icon="isFollowing ? 'radix-icons:minus-circled' : 'radix-icons:plus-circled'" class="mr-2 h-4 w-4" />
-              {{ isFollowing ? 'Unfollow' : 'Follow' }}
-            </Button>
+          <div class="flex-grow">
+            <div class="flex items-center mb-2">
+              <CardTitle v-if="!isEditing" class="text-3xl font-bold mr-4">@{{ user.username }}</CardTitle>
+              <Input v-if="isEditing" v-model="tempUser.username" class="text-2xl mr-4" placeholder="Username" />
+              <Badge v-if="!isEditing" variant="default" class="bg-purple-500">PRO</Badge>
+            </div>
+            <div class="flex items-center mt-2">
+              <CardDescription v-if="!isEditing" class="flex items-center">
+                <Icon icon="radix-icons:sewing-pin-filled" class="mr-1" />
+                <span>{{ user.location || 'No location set' }}</span>
+              </CardDescription>
+              <Select v-if="isEditing" v-model="tempUser.location">
+                <SelectTrigger class="w-[180px]">
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="country in countries" :key="country" :value="country">
+                    {{ country }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button v-if="!isCurrentUserProfile && !isEditing" variant="link" size="sm" @click="toggleFollow" class="ml-4">
+                <Icon :icon="isFollowing ? 'radix-icons:minus-circled' : 'radix-icons:plus-circled'" class="mr-2 h-4 w-4" />
+                {{ isFollowing ? 'Unfollow' : 'Follow' }}
+              </Button>
+            </div>
           </div>
+        </div>
+        <div class="flex space-x-2">
+          <Button v-if="isEditing && isCurrentUserProfile" variant="default" size="sm" @click="saveChanges">
+            <Icon icon="radix-icons:check" class="mr-2 h-4 w-4" />
+            Save
+          </Button>
+          <Button v-if="isEditing && isCurrentUserProfile" variant="outline" size="sm" @click="cancelEditing">
+            Cancel
+          </Button>
+          <Button v-if="!isEditing" variant="ghost" size="icon" @click="shareProfile">
+            <Icon icon="radix-icons:share-2" class="w-4 h-4" />
+          </Button>
+          <DropdownMenu v-if="!isEditing && isCurrentUserProfile">
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Icon icon="radix-icons:dots-horizontal" class="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem @click="startEditing">
+                <Icon icon="radix-icons:pencil-2" class="mr-2 h-4 w-4" />
+                <span>Edit Profile</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </CardHeader>
     <CardContent class="flex-grow flex flex-col justify-between">
       <div>
         <p v-if="!isEditing" class="text-sm text-gray-500 dark:text-gray-400">{{ user.bio }}</p>
-        <Textarea v-else v-model="tempUser.bio" class="mt-1" placeholder="Bio" />
+        <div v-else class="relative">
+          <Textarea
+              v-model="tempUser.bio"
+              class="mt-1"
+              placeholder="Bio"
+              :maxlength="BIO_MAX_LENGTH"
+              rows="4"
+          />
+          <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+            {{ bioCharCount }}/{{ BIO_MAX_LENGTH }}
+          </div>
+        </div>
 
-        <!-- Updated element with custom colored Separators -->
         <div class="mt-12 flex justify-center w-full text-sm">
           <div class="flex items-center space-x-7">
             <div class="flex flex-col items-center">
