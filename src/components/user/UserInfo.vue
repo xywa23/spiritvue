@@ -291,13 +291,18 @@ const saveChanges = async () => {
       avatarFile.value = null
       avatarPreview.value = null
 
-      console.log('Profile update complete, showing success toast')
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
-        variant: "default",
-        duration: 5000,
-      })
+      console.log('Profile update complete, attempting to show success toast')
+      try {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been successfully updated.",
+          variant: "default",
+          duration: 5000,
+        })
+        console.log('Success toast function called without errors')
+      } catch (toastError) {
+        console.error('Error calling success toast function:', toastError)
+      }
     } else {
       console.error('No data returned from update operation')
       throw new Error('No data returned from update operation')
@@ -306,13 +311,18 @@ const saveChanges = async () => {
     console.error('Error in saveChanges:', error)
     errorMessage.value = error instanceof Error ? error.message : 'Error updating profile'
 
-    console.log('Profile update failed, showing error toast')
-    toast({
-      title: "Update Failed",
-      description: errorMessage.value,
-      variant: "destructive",
-      duration: 5000,
-    })
+    console.log('Profile update failed, attempting to show error toast')
+    try {
+      toast({
+        title: "Update Failed",
+        description: errorMessage.value,
+        variant: "destructive",
+        duration: 5000,
+      })
+      console.log('Error toast function called without errors')
+    } catch (toastError) {
+      console.error('Error calling error toast function:', toastError)
+    }
   }
 }
 

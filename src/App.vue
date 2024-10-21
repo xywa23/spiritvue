@@ -5,6 +5,8 @@ import Header from "@/components/header.vue"
 import Sidebar from "@/components/Sidebar.vue"
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
+import Toaster from '@/components/ui/toast/Toaster.vue'
+
 
 const session = ref<Session | null>(null)
 
@@ -27,15 +29,16 @@ watch(session, (newSession) => {
 </script>
 
 <template>
-  <div class="app">
-    <Header :session="session" />
-    <div>
-      <main>
-        <RouterView :session="session" />
-      </main>
-      <Sidebar />
+  <Toaster />
+    <div class="app">
+      <Header :session="session" />
+      <div>
+        <main>
+          <RouterView :session="session" />
+        </main>
+        <Sidebar />
+      </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
